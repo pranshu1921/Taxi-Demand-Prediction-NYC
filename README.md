@@ -42,7 +42,7 @@ In the given notebook we are considering only the yellow taxis for the time peri
 * Run the jupyter notebook
 
 ## Status
-Project is: **Finished**
+Project status: **Finished**
 
 ## Inspiration
 
