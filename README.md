@@ -1,51 +1,50 @@
-# Taxi-Demand-Prediction-NYC
-This is a **time-series forecasting and regression** problem to find number of pickups, given location corrdinates(latitude and longitude) and time, in the surrounding regions, using data collected in Jan - Mar 2015 to predict the pickups in Jan - Mar 2016, provided by the **[NYC Taxi and Limousine Commission(TLC)]( http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml).**
+# newyork-taxi-demand-prediction
+## **Objective**:
 
-## Table of contents
-* [General info](#general-info)
-* [Setup](#setup)
-* [Status](#status)
-* [Inspiration](#inspiration)
-* [Contact](#contact)
+Given a region and a particular time interval, predict the no of pickups as accurately as possible in that region and nearby regions.Based on the data, machine learning model predicts the pickup demand of cabs in 10 minutes time frame. In this python notebook different machine learning model have been trained and accuracy is tested.
+### **Constraints:**
+* #### Latency :
+Given a location and current time of a taxi driver, as a taxi driver, he/she excepts to get the predicted pickups in his/her region and the adjoining regions in few seconds. Hence, there is a medium latency requirement.
+* #### Interpretability:
+As long as taxi driver gets good prediction result, he/she is not be much interested in the interpretability of the result. He/she is not much interested in why he/she is getting this result. Hence, there is a no interpretability required.
+* #### Relative Errors:
+Mean Absolute Percentage Error will be the relative error we will consider. Let say the predicted pickups for a particular location are 100, but actual pickups are 102, the percentage error will be 2% and Absolute error is 2.
+## **Data Cleaning**:
+* #### Pickup/Drop-off Latitude and Longitude : 
+It is inferred from the source https://www.flickr.com/places/info/2459115 that New York is bounded by the location coordinates(lat,long) - (40.5774, -74.15) & (40.9176,-73.7004). So, any coordinates not within these coordinates are not considered by us as we are only concerned with pickups which originate within New York.
+* #### Trip Durations:
+According to NYC Taxi & Limousine Commision Regulations the maximum allowed trip duration in a 24 hour interval is 12 hours. So we remove the points where the duration is >12 hr
+* #### Speed:
+We found that the 99.9th percentile value of speed is 45.31 mph. So, we consider only the data points where the computed speed is <45.31mph. We also observed that the avg speed in New York is 12.45miles/hr, i.e. a cab driver can travel 2 miles per 10min on avg
+* #### Trip Distance:
+The 99.9th percentile value of the distance covered in a ride is ~23 miles. So we remove rows with large trip distances
+* #### Fare:
+From percentile and graphical analysis, we set the upper limit of total fare to be 1000$ and consider only the data points which satisfies the limit
+## **Data preparation**:
 
-## General info
+* #### Clustering/Segmentaion: 
+Now we break whole of NYC into clusters/segments/regions. We choose the (lat,long) of pickup as features and we apply K-Means clustering algorithm(we find the right K using GridSearch). On choosing a cluster size of 40, we find an optimal min inter-cluster distance. Finally, we assign the cluster no. to each data point
 
-### Information on taxis:
-**Yellow Taxi: Yellow Medallion Taxicabs**
-These are the famous NYC yellow taxis that provide transportation exclusively through street-hails. The number of taxicabs is limited by a finite number of medallions issued by the TLC. You access this mode of transportation by standing in the street and hailing an available taxi with your hand. The pickups are not pre-arranged.
+* #### Time-binning:
+We use the unix time-stamps to find the 10 min time-bins each data point belongs to(index of the 10min time interval to which that data point belongs)
 
-**For Hire Vehicles (FHVs)**
-FHV transportation is accessed by a pre-arrangement with a dispatcher or limo company. These FHVs are not permitted to pick up passengers via street hails, as those rides are not considered pre-arranged.
+* #### Smoothing time-series data: 
+In our time-series data plot, there will be some 10-min bins where there are no pickups. And its not useful to predict zero pickups for a data point and moreover these points will create a problem in Moving Averages(using ratios). Thus, we smooth our training data(2015)(as in smoothing we are looking at future values) and fill with zero our test data(2016)
 
-**Green Taxi: Street Hail Livery (SHL)**
-The SHL program will allow livery vehicle owners to license and outfit their vehicles with green borough taxi branding, meters, credit card machines, and ultimately the right to accept street hails in addition to pre-arranged rides.
+* #### Fourier Transform: 
+From the Fourier transform plot of our time-series data we find the top amplitudes and corresponding frequencies
+## **Modeling** : **Baseline Models**
+Here we will use below baseline model by generating feature with ratio and previous value at a time (t-1) and will calculate Mean Absolute Percentage Error
 
-**Credits:** Quora
+   * ####  Moving Averages
+   * ####  Weighted Moving Averages
+   * ####  Exponential Moving Averages
 
-Footnote:
-In the given notebook we are considering only the yellow taxis for the time period between Jan - Mar 2015 & Jan - Mar 2016
+Along with that, we will use below regression model by selecting best hyper-parameter with the help of different technique depending on hype parameter to predict the taxi demand.
 
-## Setup
+   * #### Linear Regression with GridSearch
+   * #### Random Forest Regressor with Random search
+   * #### XgBoost Regressor with Random search
 
-* Download the jupyter notebook 'NYC Final.ipynb' above on your computer.
-* Download trip data using the following links - 
-  1. [2015 data](https://drive.google.com/file/d/1kcIZlf-LQiQhqfSCZb719Nh6Rqkp2zKK/view?usp=sharing)
-  2. [2016 data (Part 1)](https://drive.google.com/file/d/1zfDwQmNyZUzkVhRys5j09uVk9Fwyv3if/view?usp=sharing)
-  3. [2016 data (Part 2)](https://drive.google.com/file/d/1bWdNt9F3ZakZ1-ZPzGUA7QCGzBS49yBL/view?usp=sharing)
-  4. [2016 data (Part 3)](https://drive.google.com/file/d/12hFPRHhGAFZk8eF-WssicyX6OPUriSYR/view?usp=sharing)
-
-### Install the requirements
- 
-* Install the requirements using `pip install -r requirements.txt`.
-    * Make sure you use Python 3.
-    
-* Run the jupyter notebook
-
-## Status
-Project status: **Finished**
-
-## Inspiration
-
-
-## Contact
-Feel free to contact me, send an email to **pranshu1921@gmail.com**
+## **Conclusion**:
+XGBoost Regression has performed so well that have less than 12% Error Metric (Mean Absolute Percentage Error) for train and test data.
